@@ -85,7 +85,7 @@ for i in sys.argv[1:] :
 
 def unicode2bytestring( string ) :
 	try :
-		string = ''.join( [chr(ord(i)) for i in string] )
+		string = ''.join( [chr(ord(i)) for i in string or ''] )
 	except ValueError :
 		pass	# unicode fails chr(ord()) conversion
 	return string
@@ -109,8 +109,14 @@ def convert( file_name, encoding ) :
 		tag = audiofile.tag
 		# tag.header.version = eyed3.id3.ID3_V2_3
 	except:
+		print ': error in MP3 file'
 		# tag.header.version = eyed3.id3.ID3_V2_3
 		pass
+		return
+
+	if not tag:
+		print ': tag absent in MP3 file'
+		return
 
 	artist = unicode2bytestring( tag.artist )
 	album = unicode2bytestring( tag.album )
@@ -174,17 +180,18 @@ def collect_stats( file_name ) :
 		print unicode( file_name, "utf-8" ), ':', str(e)
 		return
 
-	for i in (tag.artist, tag.album, tag.title) :
-		enc = chardet.detect( unicode2bytestring( i ) )
+	if tag:
+		for i in (tag.artist, tag.album, tag.title) :
+			enc = chardet.detect( unicode2bytestring( i ) )
 
-		if enc['encoding'] == 'ascii' and not overwrite_tags : continue
+			if enc['encoding'] == 'ascii' and not overwrite_tags : continue
 
-		if enc['encoding'] == None : enc['encoding'] = 'None'
+			if enc['encoding'] == None : enc['encoding'] = 'None'
 
-		if enc['encoding'] in stats :
-			stats[enc['encoding']] += enc['confidence']
-		else :
-			stats[enc['encoding']] = enc['confidence']
+			if enc['encoding'] in stats :
+				stats[enc['encoding']] += enc['confidence']
+			else :
+				stats[enc['encoding']] = enc['confidence']
 
 def select_encoding( stats ) :
 	if len(stats) == 1 :	# only one encoding is available
